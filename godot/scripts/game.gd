@@ -255,7 +255,7 @@ func _wire_gates() -> void:
 		if area:
 			area.body_entered.connect(func(body: Node3D):
 				if body == player_car:
-					trace_manager.on_player_finish_line())
+					race_manager.on_player_finish_line())
 
 
 func _find_area(node: Node3D) -> Area3D:
