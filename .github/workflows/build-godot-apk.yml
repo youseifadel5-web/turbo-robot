@@ -1,0 +1,96 @@
+name: Build Godot Android APK
+
+# Builds Neon Rush Racing (Godot 4) into an installable Android APK and
+# sends it to Telegram using the repo secrets BOT_TOKEN / ADMIN_ID.
+on:
+  workflow_dispatch:
+  push:
+    branches: [godot-port]
+
+jobs:
+  build-apk:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Copy original assets from the Unity project
+        run: bash godot/setup_assets.sh
+
+      - name: Set up Godot 4.4.1 headless
+        run: |
+          mkdir -p "$HOME/godot-bin"
+          curl -sL -o "$HOME/godot-bin/godot.zip" \
+            https://github.com/godotengine/godot/releases/download/4.4.1-stable/Godot_v4.4.1-stable_linux.x86_64.zip
+          unzip -q "$HOME/godot-bin/godot.zip" -d "$HOME/godot-bin"
+          mv "$HOME/godot-bin/Godot_v4.4.1-stable_linux.x86_64" "$HOME/godot-bin/godot"
+          chmod +x "$HOME/godot-bin/godot"
+          "$HOME/godot-bin/godot" --version
+
+      - name: Install export templates
+        run: |
+          mkdir -p "$HOME/.local/share/godot/export_templates/4.4.1.stable"
+          curl -sL -o /tmp/templates.tpz \
+            https://github.com/godotengine/godot/releases/download/4.4.1-stable/Godot_v4.4.1-stable_export_templates.tpz
+          unzip -q /tmp/templates.tpz -d "$HOME/.local/share/godot/export_templates/4.4.1.stable/"
+          # The .tpz contains a nested "templates/" folder — flatten it.
+          if [ -d "$HOME/.local/share/godot/export_templates/4.4.1.stable/templates" ]; then
+            mv "$HOME/.local/share/godot/export_templates/4.4.1.stable/templates/"* \
+               "$HOME/.local/share/godot/export_templates/4.4.1.stable/"
+            rmdir "$HOME/.local/share/godot/export_templates/4.4.1.stable/templates"
+          fi
+          ls "$HOME/.local/share/godot/export_templates/4.4.1.stable/" | head -n 20
+
+      - name: Install Android build tools
+        run: |
+          export ANDROID_HOME=/usr/local/lib/android/sdk
+          SDKMANAGER="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+          yes | "$SDKMANAGER" --licenses > /dev/null || true
+          "$SDKMANAGER" --install "build-tools;34.0.0" "platforms;android-34" > /dev/null
+          ls "$ANDROID_HOME/build-tools/"
+
+      - name: Create a throwaway release signing key
+        run: |
+          # CI-generated distribution key (NOT a Play Store key) — a fresh key
+          # is created on every build, so every APK is self-signed standalone.
+          mkdir -p "$HOME/.android"
+          keytool -keyalg RSA -genkeypair -alias neonrush -keysize 2048 -validity 10000 \
+            -keystore "$HOME/.android/neonrush.keystore" \
+            -storepass neonrush123 -keypass neonrush123 \
+            -dname "CN=Neon Rush Racing, O=NeonRush, C=EG"
+
+      - name: Import project resources
+        run: |
+          "$HOME/godot-bin/godot" --headless --import --path godot 2>&1 | tail -n 5
+
+      - name: Export APK
+        env:
+          ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
+          ANDROID_HOME: /usr/local/lib/android/sdk
+        run: |
+          export GODOT_ANDROID_KEYSTORE_RELEASE="$HOME/.android/neonrush.keystore"
+          export GODOT_ANDROID_KEYSTORE_RELEASE_USER=neonrush
+          export GODOT_ANDROID_KEYSTORE_RELEASE_PASSWORD=neonrush123
+          cd godot
+          "$HOME/godot-bin/godot" --headless --export-release "Android" ../NeonRushRacing.apk
+          cd ..
+          ls -lh NeonRushRacing.apk
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: NeonRushRacing-apk
+          path: NeonRushRacing.apk
+
+      - name: Send APK to Telegram
+        env:
+          BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+          ADMIN_ID: ${{ secrets.ADMIN_ID }}
+        run: |
+          API="https://api.telegram.org/bot${BOT_TOKEN}"
+          SIZE=$(du -h NeonRushRacing.apk | cut -f1)
+          MSG="🏁 Neon Rush Racing (Godot 4) — APK (${SIZE}) @ ${GITHUB_SHA::7}"
+          curl -sS -X POST "${API}/sendDocument" \
+            -F chat_id="${ADMIN_ID}" \
+            -F caption="${MSG}" \
+            -F document="@NeonRushRacing.apk" | head -c 400; echo
