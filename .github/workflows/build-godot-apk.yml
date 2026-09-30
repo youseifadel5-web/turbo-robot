@@ -92,7 +92,17 @@ jobs:
           API="https://api.telegram.org/bot${BOT_TOKEN}"
           SIZE=$(du -h NeonRushRacing.apk | cut -f1)
           MSG="🏁 Neon Rush Racing (Godot 4) — APK (${SIZE}) @ ${GITHUB_SHA::7}"
-          curl -sS -X POST "${API}/sendDocument" \
-            -F chat_id="${ADMIN_ID}" \
-            -F caption="${MSG}" \
-            -F document="@NeonRushRacing.apk" | head -c 400; echo
+          for i in 1 2 3; do
+            RESP=$(curl -sS --max-time 300 -X POST "${API}/sendDocument" \
+              -F chat_id="${ADMIN_ID}" \
+              -F caption="${MSG}" \
+              -F document="@NeonRushRacing.apk")
+            echo "attempt ${i}: ${RESP:0:300}"
+            if echo "$RESP" | grep -q '"ok":true'; then
+              echo "TELEGRAM_SENT_OK"
+              exit 0
+            fi
+            sleep 10
+          done
+          echo "TELEGRAM_SEND_FAILED — see response above"
+          exit 1
