@@ -68,9 +68,16 @@ jobs:
           ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
           ANDROID_HOME: /usr/local/lib/android/sdk
         run: |
-          export GODOT_ANDROID_KEYSTORE_RELEASE="$HOME/.android/neonrush.keystore"
-          export GODOT_ANDROID_KEYSTORE_RELEASE_USER=neonrush
-          export GODOT_ANDROID_KEYSTORE_RELEASE_PASSWORD=neonrush123
+          # Inject the CI keystore into the export preset (Godot 4.2+ reads
+          # keystore settings from the preset itself, not from env vars).
+          KEYSTORE="$HOME/.android/neonrush.keystore"
+          sed -i "s|keystore/release=\"\"|keystore/release=\"${KEYSTORE}\"|" \
+            godot/export_presets.cfg
+          sed -i "s|keystore/release_user=\"\"|keystore/release_user=\"neonrush\"|" \
+            godot/export_presets.cfg
+          sed -i "s|keystore/release_password=\"\"|keystore/release_password=\"neonrush123\"|" \
+            godot/export_presets.cfg
+          grep keystore godot/export_presets.cfg
           cd godot
           "$HOME/godot-bin/godot" --headless --export-release "Android" ../NeonRushRacing.apk
           cd ..
