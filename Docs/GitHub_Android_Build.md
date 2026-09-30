@@ -15,8 +15,11 @@
 | `UNITY_EMAIL` | حساب Unity المستخدم للبناء |
 | `UNITY_PASSWORD` | كلمة مرور Unity |
 | `UNITY_SERIAL` | رقم ترخيص Unity إن كان مطلوبًا |
+| `UNITY_LICENSE` | ملف ترخيص Unity بصيغة `.ulf` كاملًا، وهو البديل المفضل عن `UNITY_SERIAL` |
 
 إذا كان `BOT_TOKEN` و`ADMIN_ID` موجودين بالفعل، سيستخدمهما Workflow مباشرة من دون كشف القيم في السجل. لا يتم طباعة أي Secret.
+
+> مهم: أول تشغيل أظهر أن GitHub لا يملك ترخيص Unity (`Missing Unity License File and no Serial was found`). يجب إضافة `UNITY_LICENSE` أو `UNITY_SERIAL` قبل إعادة تشغيل البناء. للحصول على ملف `.ulf`: فعّل Unity Personal على جهازك، أو أنشئ طلب تفعيل يدوي من Unity Editor/Unity Hub، ثم ضع محتوى ملف الترخيص كاملًا في GitHub Secret باسم `UNITY_LICENSE`.
 
 ## ما يحدث بعد البناء
 
