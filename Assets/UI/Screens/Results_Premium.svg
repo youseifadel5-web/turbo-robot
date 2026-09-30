@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080">
+  <rect width="1920" height="1080" fill="#05070C"/>
+  <text x="960" y="120" text-anchor="middle" fill="#00F0FF" font-size="36" font-family="Arial">RACE COMPLETE</text>
+  <text x="960" y="200" text-anchor="middle" fill="#F2F5FF" font-size="92" font-family="Arial" font-weight="700">P2</text>
+  <text x="960" y="250" text-anchor="middle" fill="#9AA3B5" font-size="20" font-family="Arial">OF 8</text>
+  <g font-family="Arial" fill="#C5CDDA" font-size="22">
+    <text x="700" y="360">TIME</text><text x="1100" y="360" text-anchor="end" fill="#F2F5FF">01:25.67</text>
+    <text x="700" y="420">BEST LAP</text><text x="1100" y="420" text-anchor="end" fill="#F2F5FF">00:26.10</text>
+    <text x="700" y="480">TOP SPEED</text><text x="1100" y="480" text-anchor="end" fill="#00F0FF">312 KM/H</text>
+    <text x="700" y="540">DRIFT SCORE</text><text x="1100" y="540" text-anchor="end" fill="#FF2BD6">8,420</text>
+    <text x="700" y="600">COMBO</text><text x="1100" y="600" text-anchor="end" fill="#FF2BD6">x7</text>
+    <text x="700" y="680">REWARD</text><text x="1100" y="680" text-anchor="end" fill="#FFC84D">+1,240  ·  +55 XP</text>
+  </g>
+  <rect x="700" y="820" width="240" height="70" rx="16" fill="#111722" stroke="#2A3348"/>
+  <text x="820" y="864" text-anchor="middle" fill="#F2F5FF" font-size="20" font-family="Arial">RETRY</text>
+  <rect x="980" y="820" width="240" height="70" rx="16" fill="#00F0FF"/>
+  <text x="1100" y="864" text-anchor="middle" fill="#05070C" font-size="20" font-family="Arial">CONTINUE</text>
+</svg>

@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080">
+<rect width="1920" height="1080" fill="#05070a"/>
+<text x="80" y="90" fill="white" font-size="34" font-family="Arial">2 / 8</text>
+<text x="80" y="135" fill="#8c97a8" font-size="22" font-family="Arial">LAP 1 / 3</text>
+<rect x="1630" y="50" width="210" height="140" rx="20" fill="#0e1219" stroke="#29d8ff"/>
+<text x="1735" y="125" text-anchor="middle" fill="#8c97a8" font-size="24" font-family="Arial">MINIMAP</text>
+<text x="960" y="820" text-anchor="middle" fill="white" font-size="92" font-family="Arial">187</text>
+<text x="960" y="865" text-anchor="middle" fill="#8c97a8" font-size="26" font-family="Arial">KM/H   •   GEAR 5</text>
+<circle cx="170" cy="900" r="85" fill="#0c1118" stroke="#29d8ff"/>
+<text x="170" y="910" text-anchor="middle" fill="white" font-size="28" font-family="Arial">STEER</text>
+<circle cx="1750" cy="900" r="70" fill="#0c1118" stroke="#29d8ff"/>
+<text x="1750" y="910" text-anchor="middle" fill="white" font-size="25" font-family="Arial">BRAKE</text>
+<rect x="780" y="930" width="360" height="35" rx="17" fill="#111722" stroke="#29d8ff"/>
+<text x="960" y="956" text-anchor="middle" fill="white" font-size="20" font-family="Arial">NITRO</text>
+</svg>

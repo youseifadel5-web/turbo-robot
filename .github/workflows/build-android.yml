@@ -1,0 +1,66 @@
+name: Build NeonRushRacing Android Release
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+
+permissions:
+  contents: read
+
+env:
+  UNITY_VERSION: 6000.0.23f1
+  BUILD_OUTPUT: Build/NeonRushRacing-release.apk
+
+jobs:
+  build:
+    name: Unity Android Release
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build Android APK
+        uses: game-ci/unity-builder@v4
+        env:
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+          UNITY_SERIAL: ${{ secrets.UNITY_SERIAL }}
+        with:
+          unityVersion: ${{ env.UNITY_VERSION }}
+          targetPlatform: Android
+          androidExportType: androidPackage
+          buildMethod: BuildScript.BuildAndroid
+          buildName: NeonRushRacing
+          versioning: None
+          customParameters: -nographics -batchmode -quit
+
+      - name: Verify APK
+        run: |
+          test -s "${BUILD_OUTPUT}"
+          ls -lh "${BUILD_OUTPUT}"
+          sha256sum "${BUILD_OUTPUT}" | tee Build/SHA256SUMS.txt
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: NeonRushRacing-Android-Release
+          path: |
+            Build/NeonRushRacing-release.apk
+            Build/SHA256SUMS.txt
+          retention-days: 30
+
+      - name: Send APK to Telegram admin
+        if: ${{ success() }}
+        env:
+          BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+          ADMIN_ID: ${{ secrets.ADMIN_ID }}
+        run: |
+          test -n "$BOT_TOKEN" || { echo "Missing repository secret: BOT_TOKEN"; exit 1; }
+          test -n "$ADMIN_ID" || { echo "Missing repository secret: ADMIN_ID"; exit 1; }
+          curl --fail --retry 3 --retry-all-errors \
+            -F chat_id="$ADMIN_ID" \
+            -F document=@"${BUILD_OUTPUT}" \
+            -F caption="NeonRushRacing Android Release - commit ${GITHUB_SHA::7}" \
+            "https://api.telegram.org/bot${BOT_TOKEN}/sendDocument"
