@@ -1,0 +1,42 @@
+name: Send build to Telegram
+
+# Packs the project and sends it to Telegram using the repo secrets
+# BOT_TOKEN and ADMIN_ID (values are never exposed in the repo).
+on:
+  workflow_dispatch:
+  push:
+    branches: [main, godot-port]
+
+jobs:
+  send:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Copy original assets from the Unity project
+        run: bash godot/setup_assets.sh
+
+      - name: Zip the Godot project
+        run: |
+          cd "$GITHUB_WORKSPACE"
+          zip -r -q neon-rush-godot.zip godot -x "godot/.godot/*" \
+            || (cd godot && zip -r -q ../neon-rush-godot.zip . -x ".godot/*")
+          ls -lh neon-rush-godot.zip
+
+      - name: Send to Telegram
+        env:
+          BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+          ADMIN_ID: ${{ secrets.ADMIN_ID }}
+        run: |
+          BRANCH="${GITHUB_REF#refs/heads/}"
+          SHA="${GITHUB_SHA::7}"
+          MESSAGE="🏁 Neon Rush Racing (Godot 4) — branch: ${BRANCH} @ ${SHA}"
+          API="https://api.telegram.org/bot${BOT_TOKEN}"
+          curl -sS -X POST "${API}/sendMessage" \
+            -d chat_id="${ADMIN_ID}" \
+            -d text="${MESSAGE}"
+          curl -sS -X POST "${API}/sendDocument" \
+            -F chat_id="${ADMIN_ID}" \
+            -F caption="${MESSAGE}" \
+            -F document="@neon-rush-godot.zip"
