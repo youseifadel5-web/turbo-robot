@@ -5,9 +5,9 @@ import android.content.Context
 import android.net.Uri
 import android.util.Log
 import android.widget.Toast
-import androidx.mediarouter.app.MediaRouteChooserDialog
 import androidx.mediarouter.media.MediaControlIntent
 import androidx.mediarouter.media.MediaRouteSelector
+import androidx.mediarouter.media.MediaRouter
 import com.google.android.gms.cast.MediaInfo
 import com.google.android.gms.cast.MediaLoadRequestData
 import com.google.android.gms.cast.MediaMetadata
@@ -15,12 +15,22 @@ import com.google.android.gms.cast.framework.CastContext
 import com.google.android.gms.cast.framework.CastSession
 import com.google.android.gms.cast.framework.SessionManagerListener
 import com.google.android.gms.common.images.WebImage
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import org.json.JSONObject
 
 /**
  * مساعد البث الحقيقي (Google Cast / Chromecast).
- * - يفتح قائمة الأجهزة المتوافقة
- * - يحمّل الرابط الحالي على الجهاز عند الاتصال
+ *
+ * بدل ما نستخدم MediaRouteChooserDialog (اللي كان بيقع بسبب ثيم التطبيق:
+ * "background can not be translucent" بعدين NullPointerException جوه الـTextView)،
+ * بنعمل قائمة أجهزتنا بنفسنا من MediaRouter — أوضح وأأمن.
+ *
+ * - startDiscovery()  → يبدأ البحث عن أجهزة على نفس الشبكة ويملأ devices
+ * - devices           → قائمة الأجهزة المتاحة (تتحدّث لحظيًا)
+ * - selectRoute(id)   → يتصل بالجهاز المختار
+ * - prepareCast(...)  → يجهّز الرابط (عن طريق البروكسي المحلي) ويرجّع true لو لازم نعرض القائمة
  */
 object CastHelper {
     private const val TAG = "CastHelper"
@@ -29,6 +39,13 @@ object CastHelper {
     @Volatile private var pendingTitle: String = "Youseif Player"
     @Volatile private var pendingIsLive: Boolean = true
     @Volatile private var pendingContentType: String = "application/x-mpegURL"
+
+    data class CastDeviceInfo(val id: String, val name: String, val connected: Boolean)
+
+    private val _devices = MutableStateFlow<List<CastDeviceInfo>>(emptyList())
+    val devices: StateFlow<List<CastDeviceInfo>> = _devices.asStateFlow()
+
+    @Volatile private var routerCallback: MediaRouter.Callback? = null
 
     private val sessionListener = object : SessionManagerListener<CastSession> {
         override fun onSessionStarted(session: CastSession, sessionId: String) {
@@ -65,20 +82,83 @@ object CastHelper {
         }
     }
 
+    private fun selector(): MediaRouteSelector = MediaRouteSelector.Builder()
+        .addControlCategory(MediaControlIntent.CATEGORY_REMOTE_PLAYBACK)
+        .addControlCategory(
+            com.google.android.gms.cast.CastMediaControlIntent.categoryForCast(
+                com.google.android.gms.cast.CastMediaControlIntent.DEFAULT_MEDIA_RECEIVER_APPLICATION_ID
+            )
+        )
+        .build()
+
+    private fun refreshDevices(context: Context) {
+        try {
+            val router = MediaRouter.getInstance(context.applicationContext)
+            val sel = selector()
+            _devices.value = router.routes
+                .filter { it.matchesSelector(sel) && !it.isDefault }
+                .map { CastDeviceInfo(it.id, it.name, it.isSelected) }
+        } catch (t: Throwable) {
+            Log.w(TAG, "refreshDevices: ${t.message}")
+        }
+    }
+
+    /** Starts an active scan for cast devices on the local network. */
+    fun startDiscovery(context: Context) {
+        try {
+            init(context)
+            val router = MediaRouter.getInstance(context.applicationContext)
+            val cb = routerCallback ?: object : MediaRouter.Callback() {
+                override fun onRouteAdded(router: MediaRouter, route: MediaRouter.RouteInfo) { refreshDevices(context) }
+                override fun onRouteRemoved(router: MediaRouter, route: MediaRouter.RouteInfo) { refreshDevices(context) }
+                override fun onRouteChanged(router: MediaRouter, route: MediaRouter.RouteInfo) { refreshDevices(context) }
+                override fun onRouteSelected(router: MediaRouter, route: MediaRouter.RouteInfo) { refreshDevices(context) }
+            }.also { routerCallback = it }
+            router.addCallback(selector(), cb, MediaRouter.CALLBACK_FLAG_PERFORM_ACTIVE_SCAN)
+            refreshDevices(context)
+        } catch (t: Throwable) {
+            Log.w(TAG, "startDiscovery: ${t.message}")
+        }
+    }
+
+    /** Stops the active scan (call when the picker is dismissed). */
+    fun stopDiscovery(context: Context) {
+        try {
+            val router = MediaRouter.getInstance(context.applicationContext)
+            routerCallback?.let { router.removeCallback(it) }
+            _devices.value = emptyList()
+        } catch (_: Throwable) {}
+    }
+
+    /** Connects to a route previously returned in [devices]. */
+    fun selectRoute(context: Context, routeId: String): Boolean {
+        return try {
+            val router = MediaRouter.getInstance(context.applicationContext)
+            val route = router.routes.firstOrNull { it.id == routeId } ?: return false
+            route.select()
+            true
+        } catch (t: Throwable) {
+            Log.w(TAG, "selectRoute: ${t.message}")
+            false
+        }
+    }
+
     /**
-     * يفتح نافذة اختيار جهاز البث، ويجهّز الرابط للتحميل بعد الاتصال.
+     * يجهّز البث (عن طريق البروكسي المحلي عشان الهيدرز) ويرجّع:
+     *  - false لو مفيش رابط / GMS مش موجود / اتصلنا بجهاز بالفعل وبدأنا البث
+     *  - true لو المفروض نعرض قائمة الأجهزة (startDiscovery اتنده)
      */
-    fun showDevicePicker(
+    fun prepareCast(
         activity: Activity,
         mediaUrl: String?,
         title: String,
         isLive: Boolean,
         referer: String? = null,
         userAgent: String? = null
-    ) {
+    ): Boolean {
         if (mediaUrl.isNullOrBlank()) {
             Toast.makeText(activity, "لا يوجد بث للتشغيل على الشاشة", Toast.LENGTH_SHORT).show()
-            return
+            return false
         }
         // Route the stream through the local proxy so the TV receives the SAME
         // Referer / User-Agent the phone player uses. Many IPTV streams return 403
@@ -99,52 +179,23 @@ object CastHelper {
                     "خدمات Google Play غير متوفرة على هذا الجهاز",
                     Toast.LENGTH_LONG
                 ).show()
-                return
+                return false
             }
 
             val current = castContext.sessionManager.currentCastSession
             if (current != null && current.isConnected) {
                 loadPending(current)
                 Toast.makeText(activity, "جاري البث على ${current.castDevice?.friendlyName ?: "الجهاز"}", Toast.LENGTH_SHORT).show()
-                return
+                return false
             }
-
-            val selector = MediaRouteSelector.Builder()
-                .addControlCategory(MediaControlIntent.CATEGORY_REMOTE_PLAYBACK)
-                .addControlCategory(
-                    com.google.android.gms.cast.CastMediaControlIntent.categoryForCast(
-                        com.google.android.gms.cast.CastMediaControlIntent.DEFAULT_MEDIA_RECEIVER_APPLICATION_ID
-                    )
-                )
-                .build()
-
-            // Pass an AppCompat-descendant theme with an OPAQUE colorPrimary. The chooser
-            // is an AppCompatDialog and MediaRouterThemeHelper reads the theme's colorPrimary;
-            // with the app's plain Material theme that value was #0, so the dialog threw
-            // "background can not be translucent: #0" instead of opening.
-            val dialog = MediaRouteChooserDialog(
-                activity,
-                com.example.R.style.Theme_Youseif_CastDialog
-            )
-            dialog.routeSelector = selector
-            dialog.setTitle("اختر جهاز البث")
-            // Fix: MediaRouteChooserDialog window requires an OPAQUE background — otherwise
-            // Android throws "background can not be translucent: #0". Force the window BG.
-            try {
-                val w = dialog.window
-                if (w != null) {
-                    w.setBackgroundDrawable(android.graphics.drawable.ColorDrawable(android.graphics.Color.parseColor("#101012")))
-                }
-            } catch (_: Throwable) {}
-            dialog.show()
         } catch (t: Throwable) {
-            Log.e(TAG, "showDevicePicker failed", t)
-            Toast.makeText(
-                activity,
-                "تعذر فتح قائمة الأجهزة: ${t.message ?: "خطأ"}",
-                Toast.LENGTH_LONG
-            ).show()
+            Log.e(TAG, "prepareCast failed", t)
+            Toast.makeText(activity, "تعذر تجهيز البث: ${t.message ?: "خطأ"}", Toast.LENGTH_LONG).show()
+            return false
         }
+
+        startDiscovery(activity)
+        return true
     }
 
     private fun loadPending(session: CastSession) {
@@ -161,7 +212,6 @@ object CastHelper {
                 else MediaMetadata.MEDIA_TYPE_MOVIE
             )
             metadata.putString(MediaMetadata.KEY_TITLE, pendingTitle)
-            // صورة افتراضية اختيارية — مش مطلوبة
 
             val mediaInfo = MediaInfo.Builder(url)
                 .setStreamType(streamType)

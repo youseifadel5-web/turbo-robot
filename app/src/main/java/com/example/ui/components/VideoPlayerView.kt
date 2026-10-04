@@ -225,6 +225,7 @@ fun VideoPlayerView(
     var showAudioDialog by remember { mutableStateOf(false) }
     var showSubtitleDialog by remember { mutableStateOf(false) }
     var showSpeedDialog by remember { mutableStateOf(false) }
+    var showCastPicker by remember { mutableStateOf(false) }
     var showMoreMenu by remember { mutableStateOf(false) }
     var showPlaylistOverlay by remember { mutableStateOf(false) }
 
@@ -817,7 +818,8 @@ fun VideoPlayerView(
                                     val url = controller.getCurrentMediaUrl() ?: currentChannel?.url
                                     val title = controller.getCurrentMediaTitle()
                                     val isLive = controller.isCurrentLive()
-                                    com.example.player.CastHelper.showDevicePicker(
+                                    // prepareCast: يجهّز البث (عبر البروكسي) ويرجّع true لو لازم نعرض قائمة الأجهزة
+                                    val needPicker = com.example.player.CastHelper.prepareCast(
                                         activity = act,
                                         mediaUrl = url,
                                         title = title,
@@ -825,6 +827,7 @@ fun VideoPlayerView(
                                         referer = controller.getCurrentReferer(),
                                         userAgent = controller.getCurrentUserAgent()
                                     )
+                                    if (needPicker) showCastPicker = true
                                 },
                                 modifier = Modifier.size(barIcon)
                             ) {
@@ -1781,6 +1784,20 @@ fun VideoPlayerView(
             }
         )
     }
+
+    if (showCastPicker) {
+        CastDevicePickerDialog(
+            onDismiss = {
+                showCastPicker = false
+                com.example.player.CastHelper.stopDiscovery(context)
+            },
+            onPick = { id ->
+                com.example.player.CastHelper.selectRoute(context, id)
+                showCastPicker = false
+                com.example.player.CastHelper.stopDiscovery(context)
+            }
+        )
+    }
 }
 
 /**
@@ -1866,4 +1883,80 @@ private fun formatPlayerTime(ms: Long): String {
     val hours = totalSeconds / 3600L
     return if (hours > 0L) "%02d:%02d:%02d".format(hours, minutes, seconds)
     else "%02d:%02d".format(minutes, seconds)
+}
+
+/**
+ * قائمة اختيار جهاز البث — بديلنا الخاص لـ MediaRouteChooserDialog اللي كان بيقع.
+ * بتقرا الأجهزة من CastHelper.devices وتتحدّث لحظيًا وقت البحث.
+ */
+@Composable
+private fun CastDevicePickerDialog(
+    onDismiss: () -> Unit,
+    onPick: (String) -> Unit
+) {
+    val devices by com.example.player.CastHelper.devices.collectAsState()
+    val palette = activePlayerPalette()
+    Box(
+        Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.72f)).clickable { onDismiss() },
+        contentAlignment = Alignment.Center
+    ) {
+        Column(
+            Modifier.fillMaxWidth(0.9f)
+                .clip(RoundedCornerShape(20.dp))
+                .background(DarkCardBg)
+                .border(1.dp, CrimsonBorder.copy(alpha = 0.6f), RoundedCornerShape(20.dp))
+                .clickable(enabled = false, onClick = {})
+                .padding(18.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Text("اختر جهاز البث", color = TextPrimary, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+            if (devices.isEmpty()) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(20.dp),
+                        strokeWidth = 2.dp,
+                        color = palette.accentGlow
+                    )
+                    Text(
+                        "بيدوّر على أجهزة على نفس شبكة الواي فاي…",
+                        color = TextSecondary, fontSize = 12.sp
+                    )
+                }
+            } else {
+                devices.forEach { d ->
+                    Row(
+                        Modifier.fillMaxWidth()
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(if (d.connected) palette.accentContainer.copy(alpha = .5f) else Color.Transparent)
+                            .clickable { onPick(d.id) }
+                            .padding(horizontal = 12.dp, vertical = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            Icons.Default.Cast, contentDescription = null,
+                            tint = palette.accentGlow, modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(Modifier.width(10.dp))
+                        Text(
+                            d.name, color = TextPrimary, fontSize = 14.sp,
+                            fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f)
+                        )
+                        if (d.connected) {
+                            Text("متصل", color = palette.accentGlow, fontSize = 11.sp)
+                        }
+                    }
+                }
+            }
+            Text(
+                "لو مش لاقي التلفزيون: اتأكد إنه على نفس الواي فاي، واقفل الـVPN.",
+                color = TextMuted, fontSize = 11.sp
+            )
+            TextButton(onClick = onDismiss, modifier = Modifier.align(Alignment.End)) {
+                Text("إغلاق", color = palette.accentGlow)
+            }
+        }
+    }
 }
