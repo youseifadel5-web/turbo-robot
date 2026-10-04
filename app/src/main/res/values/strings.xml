@@ -1,0 +1,24 @@
+<resources>
+    <string name="app_name">Youseif player pro</string>
+    <string name="tab_home">HOME</string>
+    <string name="tab_channels">القنوات</string>
+    <string name="tab_films">المكتبة</string>
+    <string name="tab_cartoons">CARTOON</string>
+    <string name="tab_settings">SETTINGS</string>
+    <string name="action_play">تشغيل</string>
+    <string name="action_pause">إيقاف مؤقت</string>
+    <string name="action_quality">QUALITY</string>
+    <string name="action_audio">AUDIO</string>
+    <string name="action_subtitles">الترجمة</string>
+    <string name="action_speed">SPEED</string>
+    <string name="action_fullscreen">ملء الشاشة</string>
+    <string name="action_aspect_ratio">ASPECT</string>
+    <string name="action_brightness">BRIGHTNESS</string>
+    <string name="action_volume">VOLUME</string>
+    <string name="action_audio_boost">AUDIO BOOST</string>
+    <string name="action_playlist">PLAYLIST</string>
+    <string name="action_live">LIVE</string>
+    <string name="action_search">SEARCH</string>
+    <string name="action_favorites">FAVORITES</string>
+    <string name="action_history">HISTORY</string>
+</resources>

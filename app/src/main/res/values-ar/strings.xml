@@ -1,0 +1,27 @@
+<resources>
+    <!-- Arabic locale intentionally mirrors the English chrome. The Youseif Player Pro
+         app shell stays English even when the device language is Arabic; Arabic is
+         allowed only inside channel/film titles. -->
+    <string name="app_name">Youseif player pro</string>
+    <string name="tab_home">HOME</string>
+    <string name="tab_channels">CHANNELS</string>
+    <string name="tab_films">FILMS</string>
+    <string name="tab_cartoons">CARTOON</string>
+    <string name="tab_settings">SETTINGS</string>
+    <string name="action_play">PLAY</string>
+    <string name="action_pause">PAUSE</string>
+    <string name="action_quality">QUALITY</string>
+    <string name="action_audio">AUDIO</string>
+    <string name="action_subtitles">SUBTITLES</string>
+    <string name="action_speed">SPEED</string>
+    <string name="action_fullscreen">FULLSCREEN</string>
+    <string name="action_aspect_ratio">ASPECT</string>
+    <string name="action_brightness">BRIGHTNESS</string>
+    <string name="action_volume">VOLUME</string>
+    <string name="action_audio_boost">AUDIO BOOST</string>
+    <string name="action_playlist">PLAYLIST</string>
+    <string name="action_live">LIVE</string>
+    <string name="action_search">SEARCH</string>
+    <string name="action_favorites">FAVORITES</string>
+    <string name="action_history">HISTORY</string>
+</resources>
