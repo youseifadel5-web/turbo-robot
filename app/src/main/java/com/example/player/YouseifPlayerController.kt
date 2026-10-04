@@ -185,8 +185,16 @@ class YouseifPlayerController(
     private val _isLocked = MutableStateFlow(false)
     val isLocked: StateFlow<Boolean> = _isLocked.asStateFlow()
 
-    // افتراضي Fill عشان الفيديو يملأ الشاشة عند التشغيل
-    private val _scaleMode = MutableStateFlow(VideoScaleMode.FILL)
+    // الافتراضي FIT عشان الفيديو يظهر بنسبته الطبيعية (بدون تمدد/تمطيط).
+    // FILL كان بيخلّي الفيديو يتمدّد ليملأ الشاشة ويفسد شكله مع النسب المختلفة (4:3 / طولي / سينمائي).
+    // وبنحفظ اختيار المستخدم عشان يفضل ثابت بعد إعادة التشغيل.
+    private val _scaleMode = MutableStateFlow(
+        runCatching {
+            VideoScaleMode.values().firstOrNull {
+                it.name == com.example.data.UserSettings.getString("video_scale_mode", VideoScaleMode.FIT.name)
+            }
+        }.getOrNull() ?: VideoScaleMode.FIT
+    )
     val scaleMode: StateFlow<VideoScaleMode> = _scaleMode.asStateFlow()
 
     /** Local music / device queue support */
@@ -1255,12 +1263,13 @@ class YouseifPlayerController(
 
     fun setScaleMode(mode: VideoScaleMode) {
         _scaleMode.value = mode
+        runCatching { com.example.data.UserSettings.putString("video_scale_mode", mode.name) }
     }
 
     fun cycleScaleMode() {
         val modes = VideoScaleMode.values()
         val nextIndex = (modes.indexOf(_scaleMode.value) + 1) % modes.size
-        _scaleMode.value = modes[nextIndex]
+        setScaleMode(modes[nextIndex])
     }
 
     fun toggleLock() {
