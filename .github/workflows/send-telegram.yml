@@ -2,10 +2,9 @@ name: Send build to Telegram
 
 # Packs the project and sends it to Telegram using the repo secrets
 # BOT_TOKEN and ADMIN_ID (values are never exposed in the repo).
+# Manual only — the APK is sent automatically by build-godot-apk.yml on push.
 on:
   workflow_dispatch:
-  push:
-    branches: [main, godot-port]
 
 jobs:
   send:

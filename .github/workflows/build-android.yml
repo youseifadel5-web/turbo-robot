@@ -1,9 +1,11 @@
+# NOTE: the project was ported from Unity to Godot (see the godot/ folder and
+# build-godot-apk.yml). This Unity build needs a Unity licence (UNITY_LICENSE /
+# UNITY_SERIAL) which is not configured, so it is kept manual-only to avoid
+# failing runs on every push to main.
 name: Build NeonRushRacing Android Release
 
 on:
   workflow_dispatch:
-  push:
-    branches: [ main ]
 
 permissions:
   contents: read
