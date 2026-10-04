@@ -1,0 +1,24 @@
+{
+  "language": "English",
+  "layoutDirection": "LTR",
+  "referenceWidthPx": 691,
+  "geometry": {
+    "contentPaddingDp": 20,
+    "topChromeHeightDp": 112,
+    "headerButtonDp": 48,
+    "headerCornerDp": 18,
+    "urlRowHeightDp": 82,
+    "playButtonWidthDp": 132,
+    "playerHomeAspectRatio": 1.72,
+    "cardCornerDp": 24,
+    "bottomNavCornerDp": 30,
+    "settingsCardHeightDp": 76,
+    "settingsIconBoxDp": 46,
+    "settingsIconCornerDp": 14,
+    "centerPlayButtonDp": 48,
+    "centerSideButtonDp": 34
+  },
+  "bottomNavigation": ["HOME", "CHANNELS", "FILMS", "CARTOON", "DOWNLOADS", "SETTINGS"],
+  "themePresets": ["AURORA FLOW", "RED NEON", "GREEN NEON", "CYBER CYAN", "NEON PURPLE", "EMERALD GLASS", "ICE GLASS", "GOLD GLASS"],
+  "doNotBreak": ["player controls", "quality selection", "HLS", "DASH", "RTSP", "RTMP", "progressive playback"]
+}

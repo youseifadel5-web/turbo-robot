@@ -1,0 +1,13 @@
+YouseifPlayer v24.8 - UI polish + 3D colors + split watch/download
+
+- Library/detail: quality chooser rebuilt as vertical cards with SCROLL.
+- WATCH and DOWNLOAD are now two separate full-width buttons, each on its OWN line (not side by side).
+  * مشاهدة الآن  -> gradient button (full width)
+  * تحميل        -> separate outlined button on its own row
+- Downloads screen redesign: title counter chip, ordered quality cards (4K/1080/720/480/360)
+  with real size probe, and one primary "بدء التحميل" pill reflecting the selected quality.
+- Quick menu (قائمة سريعة): cards redesigned as gradient 3D tiles, bigger icon boxes, more spacing.
+- Themes: 12 NEW neon presets added (24 total) + full 3D color studio in Colors & Appearance:
+  Hue 0-360, Saturation 0-100%, Brightness 30-100%, live gradient preview, gradient swatch row,
+  HEX input, and a "طبّق اللون 3D" apply button -> any color becomes a full Neon palette.
+- Version bumped to 24.8.

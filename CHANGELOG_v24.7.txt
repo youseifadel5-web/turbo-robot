@@ -1,0 +1,10 @@
+YouseifPlayer v24.7 - source update
+
+- Kept the existing bottom 3D navigation PNG icons unchanged.
+- Removed the Yacine TV integration and source file completely.
+- Removed the standalone CartoonsScreen/navigation entry; cartoon/anime catalog data remains available through the library/catalog flow.
+- Redesigned the quick menu from a vertical list into compact cards while preserving Radio, Videos, Music, Favorites and Device actions.
+- Redesigned Channels quick actions into consistent compact cards: Radio, Device Files, Add Playlist.
+- Preserved the existing player/VLC fallback code and existing project files/features unless explicitly changed above.
+
+Build note: Gradle assembleDebug could not be executed in this environment because the Gradle 8.9 distribution was not available locally and network access to services.gradle.org was unavailable.

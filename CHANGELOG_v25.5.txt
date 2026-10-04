@@ -1,0 +1,46 @@
+Youseif player pro — v1 (versionCode 1)
+=========================================
+التعديلات حسب شكوى المستخدم:
+
+1) تقليب الأغاني بالرموت لا يغير الأغنية
+   - الملف: app/src/main/java/com/example/ui/MainScreen.kt
+   - الإصلاح: استبدال KeyRouter.handler بمنطق context-aware يقرأ
+     localQueue أولاً ثم الراديو ثم channels/films/series/cartoons حسب
+     التبويب الحالي والـ group.
+
+2) الزر العلوي ظاهر OFF (مطفأ) ولا يضغط
+   - السبب: onRefresh=null, onDownloads=null في PlayerTopBar
+     تم استبدالها بـ refresh off-line + reload colors.
+   - qm لا تعمل عند الضغط على الزر الثالث من PlayerTopBar
+     (الزر العلوي الذي كان مطفأ) → تم ربطه بـ onRefresh = { vm?.refreshLiveCatalog(true) }.
+
+3) "يوسف 25.4-hardened" → "Youseif player pro"
+   - app/build.gradle.kts: versionName = "Youseif player pro"
+   - app/src/main/res/values/strings.xml: app_name = "Youseif player pro"
+   - strings.xml: PLAY→تشغيل, PAUSE→إيقاف مؤقت, SUBTITLES→الترجمة
+
+4) الفولدر الفاضي لأغاني الجهاز لا يضبط
+   - السبب: localQueue.filter { it.id == cur?.id } قبل التعديل كان no-op.
+     الآن SongsPlayer يستعمل localPlaylist الخاص بالمشغل.
+
+5) 1800 قناة بدل 7000 في الفولدر:
+   - السبب الجذري: الفولدر كان يقرأ فقط الصفحة الأولى paged(?page=1)
+     لأن MainViewModel.refreshLiveCatalogInternal لم يستدعي
+     FaselHdApi.allMovies / allSeries / allAnimes — فقط loadHomeCatalog
+     ثم قناة "livetv/mostwatched".
+   - الإصلاح: ضفنا FaselHdApi.allMovies/allSeries/allAnimes() تقرأ
+     كل الصفحات (lastPage=80 max) وتدمج unique-with-id.
+
+6) زر بث الشاشة يقول تعذر/background translucent:
+   - السبب: MediaRouteChooserDialog بدون خلفية OPAQUE يسبب
+     "background can not be translucent: #0".
+   - الإصلاح: CastHelper.showDevicePicker يضبط window.setBackgroundDrawable
+     إلى #101012 قبل dialog.show().
+
+7) زر Fill يقص البوردر + تداخل في الواجهة:
+   - الفيديو aspectRatio كان 1.45. ضبطناه إلى 1.78 (16:9) داخل الفيديو
+     و1.55 في شاشة Home.
+
+8) تداخل layout + حجم الصفحة كبير:
+   - Home: distance between cards زاد إلى 14.dp، خط 12.sp بدل 14.sp.
+   - Diagnostics item: arranged as 3 chips بدلاً من 4 في سطر.

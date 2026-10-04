@@ -1,0 +1,15 @@
+YouseifPlayer v25.0 - Series Hub (all sources) + Movies-only Library
+
+1) SERIES TAB now aggregates series from EVERY source enabled in the app:
+   - فاصل HD  (onLoadSeries + genre filter via onLoadGenre + faselGenres)
+   - حكاية TV (onLoadHikayeSeries + mode chips: أحدث/عربي/أجنبي/تركي/كوري/أنمي/مدبلج/رمضان)
+   - اليوم / Google Firebase (library groups SERIES:)
+   - محتواي الشخصي (custom)
+   Unified search across Fasel + Hikaye. Source-count chips. Per-source category chips.
+2) LIBRARY (المكتبة) is now MOVIES + CARTOONS ONLY — series removed everywhere:
+   - faselTypeFolders: removed "SERIES" entry
+   - fireTypeFolders: removed "SERIES" entry
+   - hikayeSubFolders: removed "SERIES" entry
+3) Series detail opens in-place inside the SERIES tab (own MediaDetailScreen branch).
+4) Quick menu keeps 2x3 grid with تحميل opening the download overlay.
+5) versionCode 42 / versionName 25.0-series-hub
