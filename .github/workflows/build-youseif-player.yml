@@ -54,6 +54,23 @@ jobs:
             echo "::warning::YOUSEIF_KEYSTORE_BASE64 is not set — generated a throwaway key. New APKs will not install over an older build."
           fi
 
+      # The committed gradle.properties is tuned for a very small machine
+      # (MaxMetaspaceSize=320m), which makes the Kotlin/Compose compile die with
+      # "OutOfMemoryError: Metaspace" on CI. Give the runner a bigger budget.
+      - name: Tune Gradle for the CI runner
+        run: |
+          cat > gradle.properties <<'EOF'
+          org.gradle.jvmargs=-Xmx4g -XX:MaxMetaspaceSize=1g -XX:+HeapDumpOnOutOfMemoryError
+          org.gradle.parallel=false
+          org.gradle.daemon=false
+          org.gradle.caching=true
+          org.gradle.workers.max=2
+          kotlin.compiler.execution.strategy=in-process
+          kotlin.incremental=true
+          android.useAndroidX=true
+          android.enableJetifier=true
+          EOF
+
       - name: Build release APK
         env:
           YOUSEIF_KEYSTORE_PATH: youseif-release.jks
